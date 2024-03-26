@@ -42,8 +42,8 @@ jobs:
         run: |
           git clone ${{ env.upStream }} TVBoxOSC
           cd TVBoxOSC
-          git checkout ${{ env.commit }}
-          echo "tag=$(git log --date=format:'%Y%m%d-%H%M' --pretty=format:%cd ${{ env.commitS }} -1)" >> $GITHUB_ENV
+          git checkout ${{ matrix.branchName}}
+          echo "tag=$(git log --date=format:'%Y%m%d-%H%M' --pretty=format:%cd ${{ matrix.branchName}} -1)" >> $GITHUB_ENV
       - name: Extra Modify
         #if: ${{ env.commit }}
         working-directory: TVBoxOSC
@@ -55,7 +55,7 @@ jobs:
         #if: ${{ env.commit }}
         working-directory: TVBoxOSC
         run: |
-          tar -cJf source-${{ env.commitS }}.tar.xz --exclude=.git --exclude=.github *
+          tar -cJf source-${{ matrix.branchName }}.tar.xz --exclude=.git --exclude=.github *
       - name: Release Apk Sign
         #if: ${{ env.commit }}
         working-directory: TVBoxOSC
@@ -100,11 +100,11 @@ jobs:
           sed -i "/${{ matrix.userName }}\/${{ matrix.repoName }}/s#Updated: [a-zA-Z0-9]*#Updated: ${{ env.commit }}#" README.md
           lastCommit=$(grep "${{ matrix.userName }}\/${{ matrix.repoName }}" ${{ github.workspace }}/README.md |grep -o '[a-z0-9]\{40\}')
           export LESSCHARSET=utf-8
-          echo -e "Credit: [${{ matrix.userName }}](${{ env.upStream }})\nCommit: ${{ env.commit }}\nChangelog:" > apk/${{ matrix.userName }}-Release.log
-          if [ "${{ env.commit }}" == "${lastCommit}" ]; then
-            git log --pretty=format:%B ${{ env.commitS }} -1 |sed -e "s# \{2,\}#\n#g" -e "/^Merge \(pull\|branch\|remote\)/d" -e '/^$/d' |cat -n |sort -k2,2 -k1,1n |uniq -f1 |sort -k1,1n |cut -f2- >> apk/${{ matrix.userName }}-Release.log
+          echo -e "Credit: [${{ matrix.userName }}](${{ env.upStream }})\nCommit: ${{ matrix.branchName }}\nChangelog:" > apk/${{ matrix.userName }}-Release.log
+          if [ "${{ matrix.branchName }}" == "${lastCommit}" ]; then
+            git log --pretty=format:%B ${{ matrix.branchName }} -1 |sed -e "s# \{2,\}#\n#g" -e "/^Merge \(pull\|branch\|remote\)/d" -e '/^$/d' |cat -n |sort -k2,2 -k1,1n |uniq -f1 |sort -k1,1n |cut -f2- >> apk/${{ matrix.userName }}-Release.log
           else
-            git log --pretty=format:%B ${{ env.commitS }}...${lastCommit:0:7} |sed -e "s# \{2,\}#\n#g" -e "/^Merge \(pull\|branch\|remote\)/d" -e '/^$/d' |cat -n |sort -k2,2 -k1,1n |uniq -f1 |sort -k1,1n |cut -f2- >> apk/${{ matrix.userName }}-Release.log
+            git log --pretty=format:%B ${{ matrix.branchName}}...${lastCommit:0:7} |sed -e "s# \{2,\}#\n#g" -e "/^Merge \(pull\|branch\|remote\)/d" -e '/^$/d' |cat -n |sort -k2,2 -k1,1n |uniq -f1 |sort -k1,1n |cut -f2- >> apk/${{ matrix.userName }}-Release.log
           fi
       - name: Upload App To Artifact
         uses: actions/upload-artifact@v3
@@ -124,7 +124,7 @@ jobs:
           removeArtifacts: true
           artifacts: |
             TVBoxOSC/apk/*.apk
-            TVBoxOSC/source-${{ env.commitS }}.*
+            TVBoxOSC/source-${{ matrix.branchName }}.*
       - name: Commit
         #if: ${{ env.commit }}
         run: |
@@ -136,7 +136,7 @@ jobs:
           git pull --rebase
           sed -i "/${{ matrix.userName }}\/${{ matrix.repoName }}/s#Updated: [a-zA-Z0-9]*#Updated: ${{ env.commit }}#" README.md
           git add --all
-          git commit -m "${{ env.commit }}"
+          git commit -m "${{ matrix.branchName }}"
       - name: Push to master
         uses: ad-m/github-push-action@master
         #if: ${{ env.commit }}
